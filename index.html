@@ -6,7 +6,8 @@
     <title>🏠お家デートシミュレーター</title>
     <style>
         :root { --panel-width: 300px; }
-        body { margin: 0; font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: #ffffff; overflow: hidden; }
+        /* position: fixed を追加してスマホでのスクロールバウンスによるCSS3Dのズレを完全に防止 */
+        body { margin: 0; font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: #ffffff; overflow: hidden; position: fixed; width: 100%; height: 100%; }
         #ui-panel {
             position: absolute; top: 10px; left: 10px; width: var(--panel-width);
             background: rgba(255, 255, 255, 0.95); padding: 15px;
@@ -316,9 +317,9 @@
         youtubeObject = new CSS3DObject(wrapper);
 
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
-        // 左右反転を修正するため、Xスケールのマイナスを解除（screenW / pixelWに変更）
-        youtubeObject.scale.set(screenW / pixelW, screenH / pixelH, 1);
-        // Y座標 of TV screen: TV_BOARD_H + TV_H / 2 + 0.05
+        // 左右反転を修正するため、Xスケールをマイナス（-screenW / pixelW）に設定
+        youtubeObject.scale.set(-screenW / pixelW, screenH / pixelH, 1);
+        // Y座標の計算をbuildFurniture内のtvScreenMeshの配置位置(TV_BOARD_H + TV_H / 2 + 0.05)と完全に一致させる
         youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.002);
         youtubeObject.rotation.y = Math.PI; // テレビ画面はソファ側（-Z方向）を向くように反転
 
@@ -561,8 +562,7 @@
             (posA.z + posB.z + posTV.z) / 3
         );
         
-        // マネキンの首（headParts）をテレビ画面の中央（posTV）へ向けるように自動追従処理を追加
-        // マネキン単体のローカル座標系からテレビ画面の座標を逆算してlookAtさせる
+        // マネキンの首（headParts）をテレビ画面の中央（posTV）へ向けるように自動追従（lookAt）処理
         if (personA && personA.headParts) {
             const localTargetA = posTV.clone();
             personA.worldToLocal(localTargetA);
