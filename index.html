@@ -106,7 +106,7 @@
     </div>
 
     <div id="ui-content">
-        <p class="app-description">お家デートでテレビ観てるときの体格差をシミュレートします。</p>
+        <p class="app-description">お家デートでテレビを観てるときの体格差をシミュレートします。</p>
 
         <div class="input-group group-a">
             <div class="section-header"><strong>A</strong></div>
@@ -194,7 +194,7 @@
 
     function init() {
         scene = new THREE.Scene();
-        // 背景は透明にする（下にCSS3DのYouTube iframeレイヤーを重ねて表示するため。白背景はbodyのCSSで代用）
+        // 背景は透明にする（下にCSS3DのYouTube iframeレイヤーを重ねて表示するため。白背景はbodyのCSS大用）
         scene.background = null;
         camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 1000);
         camera.rotation.order = 'YXZ';
@@ -317,6 +317,7 @@
 
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
         youtubeObject.scale.set(screenW / pixelW, screenH / pixelH, 1);
+        // Y座標の計算をbuildFurniture内のtvScreenMeshの配置位置(TV_BOARD_H + TV_H / 2 + 0.05)と完全に一致させる
         youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 + 0.006);
         youtubeObject.rotation.y = Math.PI; // テレビ画面はソファ側（-Z方向）を向くように反転
 
