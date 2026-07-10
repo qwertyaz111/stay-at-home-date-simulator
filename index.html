@@ -316,10 +316,10 @@
         youtubeObject = new CSS3DObject(wrapper);
 
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
-        // 左右反転を完全に直すため、Xのスケールをマイナス（-screenW / pixelW）に設定します
+        // 左右の180度反転（鏡文字）を解消するため、X方向のスケールをマイナス（-screenW / pixelW）に変更
         youtubeObject.scale.set(-screenW / pixelW, screenH / pixelH, 1);
         // Y座標の計算をbuildFurniture内のtvScreenMeshの配置位置(TV_BOARD_H + TV_H / 2 + 0.05)と完全に一致させる
-        youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.002);
+        youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 + 0.006);
         youtubeObject.rotation.y = Math.PI; // テレビ画面はソファ側（-Z方向）を向くように反転
 
         cssScene.add(youtubeObject);
@@ -405,7 +405,7 @@
         // 3Dオブジェクトのテレビ画面。動画未読み込み時はプレースホルダーのテクスチャ、
         // 動画読み込み後は、設定したブレンドにより奥のCSS3D YouTube iframeがはっきり突き抜けて見えるようになる
         tvScreenMesh = new THREE.Mesh(new THREE.BoxGeometry(tvW - 0.04, tvH - 0.04, 0.01), tvScreenMat);
-        tvScreenMesh.position.set(0, boardH + tvH / 2 + 0.05, tvZ - tvD / 2 - 0.001);
+        tvScreenMesh.position.set(0, boardH + tvH / 2 + 0.05, tvZ - tvD / 2 + 0.006);
         tvGroup.add(tvScreenMesh);
 
         const standW = 0.3, standH = 0.05, standD = 0.25;
