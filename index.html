@@ -200,7 +200,8 @@
         camera.rotation.order = 'YXZ';
         
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
+        // スマホなどの高解像度デバイスでのズレを防ぐため、WebGL側のピクセル比を一律1に固定
+        renderer.setPixelRatio(1);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setClearColor(0x000000, 0);
         renderer.domElement.style.position = 'absolute';
@@ -213,7 +214,6 @@
         cssScene = new THREE.Scene();
         cssRenderer = new CSS3DRenderer();
         cssRenderer.setSize(window.innerWidth, window.innerHeight);
-        // モバイル高画素ディスプレイ（DPR）による座標計算のズレを完全に防止するため、コンテナサイズと表示領域のCSS位置合わせを強化
         cssRenderer.domElement.style.position = 'absolute';
         cssRenderer.domElement.style.top = '0';
         cssRenderer.domElement.style.left = '0';
