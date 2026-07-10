@@ -41,7 +41,6 @@
         .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
         .section-header strong { font-size: 15px; color: #444; }
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; }
-        .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; }
         .input-item { display: flex; flex-direction: column; flex: 1; min-width: 0; }
         .hint { font-size: 10px; color: #999; margin-bottom: 2px; font-weight: bold; }
         input, select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: white; color: #333; width: 100%; box-sizing: border-box; }
@@ -319,7 +318,7 @@
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
         // 左右反転を修正するため、Xスケールのマイナスを解除（screenW / pixelWに変更）
         youtubeObject.scale.set(screenW / pixelW, screenH / pixelH, 1);
-        // Y座標の計算をbuildFurniture内のtvScreenMeshの配置位置(TV_BOARD_H + TV_H / 2 + 0.05)と完全に一致させる
+        // Y座標 of TV screen: TV_BOARD_H + TV_H / 2 + 0.05
         youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.002);
         youtubeObject.rotation.y = Math.PI; // テレビ画面はソファ側（-Z方向）を向くように反転
 
@@ -547,7 +546,33 @@
 
     function animate() {
         requestAnimationFrame(animate);
-        const centerPos = new THREE.Vector3(0, CHAIR_HEIGHT + 0.4, 0);
+        
+        // テレビ画面の中心位置を算出
+        const posTV = new THREE.Vector3(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z);
+        
+        // マネキンA・Bそれぞれの世界座標における目線（頭部パーツ）の現在位置を取得
+        const posA = new THREE.Vector3().copy(personA.position).add(new THREE.Vector3(0, personA.userData.eyeY, 0));
+        const posB = new THREE.Vector3().copy(personB.position).add(new THREE.Vector3(0, personB.userData.eyeY, 0));
+        
+        // 三人称（3rd）視点での注視点は、テレビとマネキン2人の合計3点の中心値
+        const centerPos = new THREE.Vector3(
+            (posA.x + posB.x + posTV.x) / 3,
+            (posA.y + posB.y + posTV.y) / 3,
+            (posA.z + posB.z + posTV.z) / 3
+        );
+        
+        // マネキンの首（headParts）をテレビ画面の中央（posTV）へ向けるように自動追従処理を追加
+        // マネキン単体のローカル座標系からテレビ画面の座標を逆算してlookAtさせる
+        if (personA && personA.headParts) {
+            const localTargetA = posTV.clone();
+            personA.worldToLocal(localTargetA);
+            personA.headParts.lookAt(localTargetA);
+        }
+        if (personB && personB.headParts) {
+            const localTargetB = posTV.clone();
+            personB.worldToLocal(localTargetB);
+            personB.headParts.lookAt(localTargetB);
+        }
         
         if (currentView === '3rd') {
             camera.position.set(
