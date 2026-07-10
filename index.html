@@ -316,7 +316,7 @@
         youtubeObject = new CSS3DObject(wrapper);
 
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
-        // 左右反転を修正するため、Xスケールをマイナス（-screenW / pixelW）に設定
+        // 左右反転を完全に直すため、Xのスケールをマイナス（-screenW / pixelW）に設定します
         youtubeObject.scale.set(-screenW / pixelW, screenH / pixelH, 1);
         // Y座標の計算をbuildFurniture内のtvScreenMeshの配置位置(TV_BOARD_H + TV_H / 2 + 0.05)と完全に一致させる
         youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.002);
