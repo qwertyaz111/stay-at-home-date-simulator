@@ -81,6 +81,7 @@
         .usage-notes { font-size: 10px; color: #999; margin-top: 12px; line-height: 1.5; text-align: center; }
 
         .info-box { background: #ffffff; padding: 15px; border-radius: 12px; margin-top: 12px; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        .info-box id="info" { }
         .info-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; }
         .info-row:not(:last-child) { border-bottom: 1px dashed #eee; margin-bottom: 4px; }
         .info-label { color: #555; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
@@ -307,16 +308,20 @@
         wrapper.style.width = pixelW + 'px';
         wrapper.style.height = pixelH + 'px';
         wrapper.style.background = '#000';
+        wrapper.style.overflow = 'hidden';
 
         const iframe = document.createElement('iframe');
         iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = '0';
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
         iframe.setAttribute('allow', 'autoplay; encrypted-media');
         wrapper.appendChild(iframe);
 
-        youtubeObject = new CSS3DObject(wrapper);
+        const obj = new CSS3DObject(wrapper);
 
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
         
@@ -324,10 +329,10 @@
         pivot.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.005);
         pivot.rotation.y = Math.PI;
         
-        youtubeObject.scale.set(screenW / pixelW, screenH / pixelH, 1);
-        youtubeObject.position.set(0, 0, 0);
+        obj.scale.set(screenW / pixelW, screenH / pixelH, 1);
+        obj.position.set(0, 0, 0);
         
-        pivot.add(youtubeObject);
+        pivot.add(obj);
         cssScene.add(pivot);
         
         youtubeObject = pivot; 
@@ -347,7 +352,9 @@
         camera.updateProjectionMatrix();
         
         renderer.setSize(width, height);
-        if (cssRenderer) cssRenderer.setSize(width, height);
+        if (cssRenderer) {
+            cssRenderer.setSize(width, height);
+        }
     }
 
     function swapAB() {
@@ -635,9 +642,9 @@
             isDragging = true; 
             if (e.touches.length === 1) {
                 previousTouch = e.touches[0]; 
-                initialPinchDist = null;
+                window.initialPinchDist = null;
             } else if (e.touches.length === 2) {
-                initialPinchDist = Math.hypot(
+                window.initialPinchDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
@@ -645,7 +652,7 @@
         }, { passive: false });
         window.addEventListener('touchend', () => {
             isDragging = false;
-            initialPinchDist = null;
+            window.initialPinchDist = null;
         });
         window.addEventListener('touchmove', e => {
             if(!isDragging) return;
@@ -653,12 +660,12 @@
                 const touch = e.touches[0]; 
                 move(touch.clientX - previousTouch.clientX, touch.clientY - previousTouch.clientY); 
                 previousTouch = touch;
-            } else if (e.touches.length === 2 && initialPinchDist !== null) {
+            } else if (e.touches.length === 2 && window.initialPinchDist !== null && window.initialPinchDist !== undefined) {
                 const currentDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
-                const diff = currentDist - initialPinchDist;
+                const diff = currentDist - window.initialPinchDist;
                 if (currentView === '3rd') {
                     camDist -= diff * 0.005;
                     camDist = Math.max(0.5, Math.min(10, camDist));
@@ -667,7 +674,7 @@
                     camera.fov = Math.max(20, Math.min(100, camera.fov));
                     camera.updateProjectionMatrix();
                 }
-                initialPinchDist = currentDist;
+                window.initialPinchDist = currentDist;
             }
         }, { passive: false });
     }
