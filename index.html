@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🏠お家デートシミュレーター</title>
+    <title>🪑お座りシミュレーター</title>
     <style>
         :root { --panel-width: 300px; }
         body { margin: 0; font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: #ffffff; overflow: hidden; }
@@ -101,12 +101,12 @@
 
 <div id="ui-panel">
     <div class="panel-header" onclick="togglePanel()">
-        <h1 class="app-title">🏠お家デートシミュレーター</h1>
+        <h1 class="app-title">🪑お座りシミュレーター</h1>
         <span id="toggle-text">閉じる</span>
     </div>
 
     <div id="ui-content">
-        <p class="app-description">お家デートでテレビ見てるときの体格差をシミュレートします。</p>
+        <p class="app-description">椅子に座ったときの体格差をシミュレートします。</p>
 
         <div class="input-group group-a">
             <div class="section-header"><strong>A</strong></div>
@@ -291,7 +291,7 @@
     }
 
     // 本物のYouTube埋め込みプレーヤー（iframe）をCSS3DObjectとして3D空間のテレビ画面位置にぴったり重ねる。
-    // WebGL側のテレビ画面メッシュはcolorWrite:falseにして「穴」を開け、そこにこのiframeが透けて見える仕組み。
+    // WebGL側のテレビ画面メッシュは混合モードで「奥をくり抜く透過」にして、そこにこのiframeが透けて見える仕組み。
     function loadYoutubeVideo(videoId) {
         if (youtubeObject) {
             cssScene.remove(youtubeObject);
@@ -322,7 +322,7 @@
 
         cssScene.add(youtubeObject);
         videoActive = true;
-        updateScene(); // テレビ画面メッシュをcolorWrite:falseの穴あき素材に切り替える
+        updateScene(); // テレビ画面メッシュを透過素材に切り替える
     }
 
     function onWindowResize() {
@@ -353,9 +353,10 @@
         const cushionMat = new THREE.MeshPhongMaterial({ color: 0x8a99a8 }); 
         const tvBoardMat = new THREE.MeshPhongMaterial({ color: 0x3e2723 }); 
         const tvFrameMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a }); 
-        // 動画読み込み後はcolorWrite:falseにして「穴」を開け、下のCSS3D YouTube iframeを透過させる
+        
+        // 動画読み込み後は、背後のCSS3Dオブジェクト（動画レイヤー）をしっかり透過・描画表示させるためのブレンド設定にする
         const tvScreenMat = videoActive
-            ? new THREE.MeshBasicMaterial({ colorWrite: false })
+            ? new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, blending: THREE.NoBlending })
             : new THREE.MeshPhongMaterial({ map: videoTexture, color: 0xffffff }); 
 
         const sofaGroup = new THREE.Group();
@@ -400,7 +401,7 @@
         tvGroup.add(tvFrame);
 
         // 3Dオブジェクトのテレビ画面。動画未読み込み時はプレースホルダーのテクスチャ、
-        // 動画読み込み後はcolorWrite:falseの「穴」になり、下のCSS3D YouTube iframeが透けて見える
+        // 動画読み込み後は、設定したブレンドにより奥のCSS3D YouTube iframeがはっきり突き抜けて見えるようになる
         tvScreenMesh = new THREE.Mesh(new THREE.BoxGeometry(tvW - 0.04, tvH - 0.04, 0.01), tvScreenMat);
         tvScreenMesh.position.set(0, boardH + tvH / 2 + 0.05, tvZ - tvD / 2 + 0.006);
         tvGroup.add(tvScreenMesh);
@@ -659,7 +660,7 @@
     function shareToX() {
         const nA = document.getElementById('nameA').value || 'A', nB = document.getElementById('nameB').value || 'B';
         const hA = parseFloat(document.getElementById('heightA').value) || 158.0, hB = parseFloat(document.getElementById('heightB').value) || 171.5;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${nA}(${hA.toFixed(1)}cm)と${nB}(${hB.toFixed(1)}cm)のお家デート！\n#お家デートシミュレーター`)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${nA}(${hA.toFixed(1)}cm)と${nB}(${hB.toFixed(1)}cm)のソファ座り体格差！\n#お座りシミュレーター`)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
     }
 
     init();
