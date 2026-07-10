@@ -191,13 +191,13 @@
     let currentVideoId = '';
 
     const CHAIR_HEIGHT = 0.42;
-    // テレビ画面のサイズ・位置（buildFurnitureとCSS3Dの画面位置合わせで共用する定数）
     const TV_Z = 1.8, TV_BOARD_H = 0.3, TV_W = 1.2, TV_H = 0.7, TV_D = 0.05;
 
     function init() {
         const container = document.getElementById('canvas-container');
-        const width = container.clientWidth;
-        const height = container.clientHeight;
+        const rect = container.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
 
         scene = new THREE.Scene();
         scene.background = null;
@@ -205,24 +205,26 @@
         camera.rotation.order = 'YXZ';
         
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        // デバイスの本来のピクセル比率を適用し、解像度のズレを防止
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 0);
         renderer.domElement.style.position = 'absolute';
         renderer.domElement.style.top = '0';
         renderer.domElement.style.left = '0';
-        renderer.domElement.style.zIndex = '2'; // WebGL（マネキン側）を手前に配置
-        renderer.domElement.style.pointerEvents = 'none'; // WebGLレイヤーへのマウス/タッチ操作をすり抜けさせて奥のYouTubeを触れるようにする
+        renderer.domElement.style.zIndex = '2';
+        renderer.domElement.style.pointerEvents = 'none';
 
-        // CSS3DRenderer: 本物のYouTube iframeをテレビ画面の位置に3D空間として重ねて表示するための描画レイヤー
         cssScene = new THREE.Scene();
         cssRenderer = new CSS3DRenderer();
         cssRenderer.setSize(width, height);
         cssRenderer.domElement.style.position = 'absolute';
         cssRenderer.domElement.style.top = '0';
         cssRenderer.domElement.style.left = '0';
-        cssRenderer.domElement.style.zIndex = '1'; // CSS3D（YouTube側）を奥に配置
+        cssRenderer.domElement.style.zIndex = '1';
+        
+        cssRenderer.domElement.style.width = '100%';
+        cssRenderer.domElement.style.height = '100%';
+
         container.appendChild(cssRenderer.domElement);
         container.appendChild(renderer.domElement);
 
@@ -240,8 +242,7 @@
         setupVideoTexture();
 
         window.addEventListener('resize', onWindowResize);
-        // スマホの画面回転やアドレスバーの伸縮対策として、一瞬遅れてサイズを再同期させる
-        window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 200));
+        window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 300));
         
         window.updateScene = updateScene;
         window.switchView = switchView;
@@ -255,7 +256,6 @@
             text.innerText = panel.classList.contains('collapsed') ? '開く' : '閉じる';
         };
 
-        // 3D空間クリックでYouTube埋め込みプレーヤーのミュート解除と再生を試みる（YouTube IFrame APIへpostMessage）
         document.getElementById('canvas-container').addEventListener('click', () => {
             if (youtubeObject) {
                 const iframe = youtubeObject.element.querySelector('iframe');
@@ -271,14 +271,12 @@
     }
 
     function setupVideoTexture() {
-        // 初期状態（動画未読み込み時）のテレビ画面用キャンバス
         const canvas = document.createElement('canvas');
         canvas.width = 640; canvas.height = 360;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 640, 360);
         ctx.fillStyle = '#444444'; ctx.font = '22px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('No Video Loaded', 320, 190);
-        
         videoTexture = new THREE.CanvasTexture(canvas);
     }
 
@@ -298,8 +296,6 @@
         }
     }
 
-    // 本物のYouTube埋め込みプレーヤー（iframe）をCSS3DObjectとして3D空間のテレビ画面位置にぴったり重ねる。
-    // WebGL側のテレビ画面メッシュは混合モードで「奥をくり抜く透過」にして、そこにこのiframeが透けて見える仕組み。
     function loadYoutubeVideo(videoId) {
         if (youtubeObject) {
             cssScene.remove(youtubeObject);
@@ -318,28 +314,34 @@
         iframe.style.height = '100%';
         iframe.style.border = '0';
         iframe.setAttribute('allow', 'autoplay; encrypted-media');
-        iframe.setAttribute('frameborder', '0');
         wrapper.appendChild(iframe);
 
         youtubeObject = new CSS3DObject(wrapper);
 
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
-        // 左右反転を修正するため、Xスケールのマイナスを解除（screenW / pixelWに変更）
+        
+        const pivot = new THREE.Group();
+        pivot.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.005);
+        pivot.rotation.y = Math.PI;
+        
         youtubeObject.scale.set(screenW / pixelW, screenH / pixelH, 1);
-        // Y座標 of TV screen: TV_BOARD_H + TV_H / 2 + 0.05
-        youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.002);
-        youtubeObject.rotation.y = Math.PI; // テレビ画面はソファ側（-Z方向）を向くように反転
+        youtubeObject.position.set(0, 0, 0);
+        
+        pivot.add(youtubeObject);
+        cssScene.add(pivot);
+        
+        youtubeObject = pivot; 
 
-        cssScene.add(youtubeObject);
         videoActive = true;
-        updateScene(); // テレビ画面メッシュを透過素材に切り替える
+        updateScene();
     }
 
     function onWindowResize() {
         const container = document.getElementById('canvas-container');
         if (!container) return;
-        const width = container.clientWidth;
-        const height = container.clientHeight;
+        const rect = container.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
 
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
@@ -370,7 +372,6 @@
         const tvBoardMat = new THREE.MeshPhongMaterial({ color: 0x3e2723 }); 
         const tvFrameMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a }); 
         
-        // 動画読み込み後は、背後のCSS3Dオブジェクト（動画レイヤー）をしっかり透過・描画表示させるためのブレンド設定にする
         const tvScreenMat = videoActive
             ? new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, blending: THREE.NoBlending })
             : new THREE.MeshPhongMaterial({ map: videoTexture, color: 0xffffff }); 
@@ -416,8 +417,6 @@
         tvFrame.position.set(0, boardH + tvH / 2 + 0.05, tvZ);
         tvGroup.add(tvFrame);
 
-        // 3Dオブジェクトのテレビ画面。動画未読み込み時はプレースホルダーのテクスチャ、
-        // 動画読み込み後は、設定したブレンドにより奥のCSS3D YouTube iframeがはっきり突き抜けて見えるようになる
         tvScreenMesh = new THREE.Mesh(new THREE.BoxGeometry(tvW - 0.04, tvH - 0.04, 0.01), tvScreenMat);
         tvScreenMesh.position.set(0, boardH + tvH / 2 + 0.05, tvZ - tvD / 2 - 0.001);
         tvGroup.add(tvScreenMesh);
@@ -475,7 +474,6 @@
             anchor.add(mesh);
             bodyGroup.add(anchor);
             group.arms.push(anchor);
-            anchor.rotation.set(0, 0, 0); 
         });
 
         const thighLen = legH * 0.5;
@@ -561,22 +559,16 @@
     function animate() {
         requestAnimationFrame(animate);
         
-        // テレビ画面の中心位置を算出
         const posTV = new THREE.Vector3(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z);
-        
-        // マネキンA・Bそれぞれの世界座標における目線（頭部パーツ）の現在位置を取得
         const posA = new THREE.Vector3().copy(personA.position).add(new THREE.Vector3(0, personA.userData.eyeY, 0));
         const posB = new THREE.Vector3().copy(personB.position).add(new THREE.Vector3(0, personB.userData.eyeY, 0));
         
-        // 三人称（3rd）視点での注視点は、テレビとマネキン2人の合計3点の中心値
         const centerPos = new THREE.Vector3(
             (posA.x + posB.x + posTV.x) / 3,
             (posA.y + posB.y + posTV.y) / 3,
             (posA.z + posB.z + posTV.z) / 3
         );
         
-        // マネキンの首（headParts）をテレビ画面の中央（posTV）へ向けるように自動追従処理を追加
-        // マネキン単体のローカル座標系からテレビ画面の座標を逆算してlookAtさせる
         if (personA && personA.headParts) {
             const localTargetA = posTV.clone();
             personA.worldToLocal(localTargetA);
@@ -597,18 +589,15 @@
             camera.lookAt(centerPos);
         } else {
             const self = (currentView === 'A' ? personA : personB);
-            
             const eyePos = new THREE.Vector3().copy(self.position).add(new THREE.Vector3(0, self.userData.eyeY, 0));
             camera.position.copy(eyePos);
             
             const baseTargetRotation = new THREE.Quaternion().setFromEuler(
                 new THREE.Euler(0, self.rotation.y + Math.PI, 0, 'YXZ')
             );
-            
             const operationRotation = new THREE.Quaternion().setFromEuler(
                 new THREE.Euler(rotation.x, rotation.y, 0, 'YXZ')
             );
-            
             camera.quaternion.copy(baseTargetRotation).multiply(operationRotation);
         }
 
@@ -617,17 +606,12 @@
     }
 
     function setupControls() {
-        const c = document.getElementById('canvas-container');
-        let initialPinchDist = null;
-
         const move = (dx, dy) => {
             rotation.y -= dx * 0.005; rotation.x -= dy * 0.005;
             rotation.x = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, rotation.x));
         };
         
-        // WebGL側をpointerEvents='none'にしたため、背後にあるCSS3DRendererのコンテナ（またはUI全体）経由でドラッグ操作を受け付けるようにイベントの登録先を変更
         window.addEventListener('mousedown', (e) => {
-            // UIパネル上のクリック時はカメラをドラッグさせない
             if(e.target.closest('#ui-panel')) return;
             isDragging = true;
         });
