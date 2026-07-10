@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🪑お座りシミュレーター</title>
+    <title>🏠お家デートシミュレーター</title>
     <style>
         :root { --panel-width: 300px; }
         body { margin: 0; font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: #ffffff; overflow: hidden; }
@@ -101,12 +101,12 @@
 
 <div id="ui-panel">
     <div class="panel-header" onclick="togglePanel()">
-        <h1 class="app-title">🪑お座りシミュレーター</h1>
+        <h1 class="app-title">🏠お家デートシミュレーター</h1>
         <span id="toggle-text">閉じる</span>
     </div>
 
     <div id="ui-content">
-        <p class="app-description">椅子に座ったときの体格差をシミュレートします。</p>
+        <p class="app-description">お家デートでテレビ観てるときの体格差をシミュレートします。</p>
 
         <div class="input-group group-a">
             <div class="section-header"><strong>A</strong></div>
@@ -660,7 +660,7 @@
     function shareToX() {
         const nA = document.getElementById('nameA').value || 'A', nB = document.getElementById('nameB').value || 'B';
         const hA = parseFloat(document.getElementById('heightA').value) || 158.0, hB = parseFloat(document.getElementById('heightB').value) || 171.5;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${nA}(${hA.toFixed(1)}cm)と${nB}(${hB.toFixed(1)}cm)のソファ座り体格差！\n#お座りシミュレーター`)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${nA}(${hA.toFixed(1)}cm)と${nB}(${hB.toFixed(1)}cm)のお家デート体格差！\n#お家デートシミュレーター`)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
     }
 
     init();
