@@ -81,7 +81,6 @@
         .usage-notes { font-size: 10px; color: #999; margin-top: 12px; line-height: 1.5; text-align: center; }
 
         .info-box { background: #ffffff; padding: 15px; border-radius: 12px; margin-top: 12px; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
-        .info-box id="info" { }
         .info-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; }
         .info-row:not(:last-child) { border-bottom: 1px dashed #eee; margin-bottom: 4px; }
         .info-label { color: #555; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
@@ -187,6 +186,7 @@
     let personA, personB, furnitureGroup, stageGroup;
     let currentView = '3rd';
     let rotation = { x: 0, y: 0 }, camDist = 2.5, isDragging = false, previousTouch = null;
+    let initialPinchDist = null;
 
     let videoTexture, tvScreenMesh, videoActive = false;
     let currentVideoId = '';
@@ -222,9 +222,6 @@
         cssRenderer.domElement.style.top = '0';
         cssRenderer.domElement.style.left = '0';
         cssRenderer.domElement.style.zIndex = '1';
-        
-        cssRenderer.domElement.style.width = '100%';
-        cssRenderer.domElement.style.height = '100%';
 
         container.appendChild(cssRenderer.domElement);
         container.appendChild(renderer.domElement);
@@ -309,6 +306,7 @@
         wrapper.style.height = pixelH + 'px';
         wrapper.style.background = '#000';
         wrapper.style.overflow = 'hidden';
+        wrapper.style.boxSizing = 'border-box';
 
         const iframe = document.createElement('iframe');
         iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
@@ -642,9 +640,9 @@
             isDragging = true; 
             if (e.touches.length === 1) {
                 previousTouch = e.touches[0]; 
-                window.initialPinchDist = null;
+                initialPinchDist = null;
             } else if (e.touches.length === 2) {
-                window.initialPinchDist = Math.hypot(
+                initialPinchDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
@@ -652,7 +650,7 @@
         }, { passive: false });
         window.addEventListener('touchend', () => {
             isDragging = false;
-            window.initialPinchDist = null;
+            initialPinchDist = null;
         });
         window.addEventListener('touchmove', e => {
             if(!isDragging) return;
@@ -660,12 +658,12 @@
                 const touch = e.touches[0]; 
                 move(touch.clientX - previousTouch.clientX, touch.clientY - previousTouch.clientY); 
                 previousTouch = touch;
-            } else if (e.touches.length === 2 && window.initialPinchDist !== null && window.initialPinchDist !== undefined) {
+            } else if (e.touches.length === 2 && initialPinchDist !== null) {
                 const currentDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
-                const diff = currentDist - window.initialPinchDist;
+                const diff = currentDist - initialPinchDist;
                 if (currentView === '3rd') {
                     camDist -= diff * 0.005;
                     camDist = Math.max(0.5, Math.min(10, camDist));
@@ -674,7 +672,7 @@
                     camera.fov = Math.max(20, Math.min(100, camera.fov));
                     camera.updateProjectionMatrix();
                 }
-                window.initialPinchDist = currentDist;
+                initialPinchDist = currentDist;
             }
         }, { passive: false });
     }
