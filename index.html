@@ -315,13 +315,12 @@
 
         youtubeObject = new CSS3DObject(wrapper);
 
-        // 左右反転を打ち消すため、スケールのX軸をマイナス値（反転）に設定します
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
+        // 左右反転を修正するため、Xスケールをマイナス（-screenW / pixelW）に設定
         youtubeObject.scale.set(-screenW / pixelW, screenH / pixelH, 1);
-        
         // Y座標の計算をbuildFurniture内のtvScreenMeshの配置位置(TV_BOARD_H + TV_H / 2 + 0.05)と完全に一致させる
         youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.002);
-        youtubeObject.rotation.y = Math.PI; // テレビ画面はソファ側（-Z方向）を向くように回転
+        youtubeObject.rotation.y = Math.PI; // テレビ画面はソファ側（-Z方向）を向くように反転
 
         cssScene.add(youtubeObject);
         videoActive = true;
