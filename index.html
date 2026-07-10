@@ -41,6 +41,7 @@
         .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
         .section-header strong { font-size: 15px; color: #444; }
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; }
+        .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; }
         .input-item { display: flex; flex-direction: column; flex: 1; min-width: 0; }
         .hint { font-size: 10px; color: #999; margin-bottom: 2px; font-weight: bold; }
         input, select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: white; color: #333; width: 100%; box-sizing: border-box; }
@@ -318,7 +319,8 @@
         const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
         youtubeObject.scale.set(screenW / pixelW, screenH / pixelH, 1);
         // Y座標の計算をbuildFurniture内のtvScreenMeshの配置位置(TV_BOARD_H + TV_H / 2 + 0.05)と完全に一致させる
-        youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 + 0.006);
+        // Z軸位置をテレビ前面のさらに少し手前に配置して、黒いメッシュの背後に隠れないように補正
+        youtubeObject.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, tvZ - TV_D / 2 - 0.01);
         youtubeObject.rotation.y = Math.PI; // テレビ画面はソファ側（-Z方向）を向くように反転
 
         cssScene.add(youtubeObject);
