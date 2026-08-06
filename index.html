@@ -327,6 +327,12 @@
     }
 
     function buildFurniture(mode) {
+        if (youtubeObject) {
+            if (youtubeObject.element && youtubeObject.element.parentNode) {
+                youtubeObject.element.parentNode.removeChild(youtubeObject.element);
+            }
+            youtubeObject.removeFromParent();
+        }
         while(furnitureGroup.children.length > 0){
             furnitureGroup.remove(furnitureGroup.children[0]);
         }
