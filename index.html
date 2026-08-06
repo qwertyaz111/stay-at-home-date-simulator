@@ -15,15 +15,11 @@
             max-height: calc(100vh - 40px); overflow-y: auto;
             border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             touch-action: auto;
-            box-sizing: border-box;
         }
         /* 100vw/vhからfixedの100%に変更し、アドレスバーの影響を完全に排除します */
         #canvas-container { width: 100%; height: 100%; cursor: move; touch-action: none; position: fixed; top: 0; left: 0; overflow: hidden; }
 
-        @media screen and (max-width: 480px) { 
-            :root { --panel-width: calc(100vw - 20px); }
-            #ui-panel { top: 10px; left: 10px; padding: 10px; max-height: calc(100vh - 20px); }
-        }
+        @media screen and (max-width: 480px) { :root { --panel-width: 85vw; } }
         
         @media screen and (orientation: landscape) and (max-height: 500px) {
             :root { --panel-width: 260px; }
@@ -199,10 +195,8 @@
     const TV_Z = 1.8, TV_BOARD_H = 0.3, TV_W = 1.2, TV_H = 0.7, TV_D = 0.05;
 
     function init() {
-        const container = document.getElementById('canvas-container');
-        const rect = container.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
 
         scene = new THREE.Scene();
         scene.background = null;
@@ -226,6 +220,7 @@
         cssRenderer.domElement.style.left = '0';
         cssRenderer.domElement.style.zIndex = '1';
 
+        const container = document.getElementById('canvas-container');
         container.appendChild(cssRenderer.domElement);
         container.appendChild(renderer.domElement);
 
@@ -267,6 +262,7 @@
             }
         });
 
+        onWindowResize();
         updateScene();
         animate();
     }
@@ -303,11 +299,8 @@
     }
 
     function onWindowResize() {
-        const container = document.getElementById('canvas-container');
-        if (!container) return;
-        const rect = container.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
 
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
