@@ -9,17 +9,46 @@
         /* スマホでの画面の伸縮やスクロールによるズレを完全に防ぐため、固定配置にします */
         body { margin: 0; font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: #ffffff; overflow: hidden; position: fixed; width: 100%; height: 100%; }
         #ui-panel {
-            position: absolute; top: 10px; left: 10px; width: var(--panel-width);
-            background: rgba(255, 255, 255, 0.95); padding: 15px;
-            border-radius: 15px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            max-height: calc(100vh - 40px); overflow-y: auto;
-            border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            touch-action: auto;
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            width: var(--panel-width);
+            max-height: calc(100vh - 20px);
+            max-height: calc(100dvh - 20px); /* アドレスバーの可変長に対応 */
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 15px; 
+            padding-bottom: 40px; /* 一番下の要素が隠れないよう余白を確保 */
+            border-radius: 15px; 
+            z-index: 100; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; /* iOSでの滑らかなスクロール */
+            touch-action: pan-y; /* 縦スワイプ操作（スクロール）を許可 */
+            border: 1px solid rgba(255,255,255,0.3); 
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+            box-sizing: border-box;
+            transition: all 0.2s ease-out; /* 開閉アニメーションを滑らかに */
         }
+
+        /* 折りたたんだ（閉じた）時の専用スタイル */
+        #ui-panel.collapsed {
+            max-height: none !important;
+            padding: 10px 15px !important;
+            overflow: hidden !important;
+            width: auto;
+            max-width: calc(100vw - 20px);
+        }
+
         /* 100vw/vhからfixedの100%に変更し、アドレスバーの影響を完全に排除します */
         #canvas-container { width: 100%; height: 100%; cursor: move; touch-action: none; position: fixed; top: 0; left: 0; overflow: hidden; }
 
-        @media screen and (max-width: 480px) { :root { --panel-width: 85vw; } }
+        @media screen and (max-width: 480px) { 
+            :root { --panel-width: calc(100vw - 20px); }
+            #ui-panel { left: 10px; right: 10px; }
+            /* スマホ表示で閉じた場合、右端の固定を解除してタイトルサイズへ収める */
+            #ui-panel.collapsed { right: auto; }
+        }
         
         @media screen and (orientation: landscape) and (max-height: 500px) {
             :root { --panel-width: 260px; }
@@ -28,11 +57,32 @@
             .input-group { padding: 8px; margin-bottom: 5px; }
         }
 
-        .panel-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
-        #toggle-text { font-size: 12px; font-weight: bold; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; }
+        .panel-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            cursor: pointer; 
+            user-select: none; 
+            gap: 10px; 
+        }
+        #toggle-text { 
+            font-size: 12px; 
+            font-weight: bold; 
+            color: #666; 
+            background: #eee; 
+            padding: 4px 10px; 
+            border-radius: 10px; 
+            white-space: nowrap; /* テキストの意図しない改行を防止 */
+        }
         .collapsed #ui-content { display: none; }
 
-        .app-title { font-size: 1.4rem; margin: 0; color: #333; text-align: center; font-weight: bold; flex-grow: 1; }
+        .app-title { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            color: #333; 
+            font-weight: bold; 
+            white-space: nowrap; /* タイトルの改行を防止 */
+        }
         .app-description { font-size: 11px; color: #777; margin-top: 8px; margin-bottom: 5px; line-height: 1.5; text-align: center; }
         
         .input-group { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; margin-bottom: 10px; }
@@ -87,8 +137,56 @@
         .info-value { font-weight: 800; font-size: 18px; color: #2c3e50; font-variant-numeric: tabular-nums; }
         .unit { font-size: 11px; margin-left: 3px; color: #7f8c8d; font-weight: normal; }
         
-        #view-label { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 100; pointer-events: none; }
+        #view-label { 
+            position: absolute; 
+            bottom: 20px; 
+            right: 15px; 
+            background: rgba(0,0,0,0.7); 
+            color: white; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            z-index: 90; 
+            pointer-events: none; 
+        }
         .crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; border: 2px solid rgba(0,0,0,0.15); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+
+        /* 縦持ち警告オーバーレイのスタイル */
+        #orientation-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            color: #ffffff;
+            z-index: 99;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        #orientation-overlay .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            animation: rotate-hint 2s infinite ease-in-out;
+        }
+        #orientation-overlay p {
+            font-size: 16px;
+            font-weight: bold;
+            line-height: 1.6;
+            margin: 0;
+        }
+        @keyframes rotate-hint {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+        }
     </style>
     <script type="importmap">
       {
@@ -100,6 +198,11 @@
     </script>
 </head>
 <body>
+
+<div id="orientation-overlay">
+    <div class="icon">📱</div>
+    <p>スマホを横に持ってください</p>
+</div>
 
 <div id="ui-panel">
     <div class="panel-header" onclick="togglePanel()">
@@ -143,6 +246,10 @@
                 <input type="range" id="sittingDistance" min="0.3" max="1.5" step="0.01" value="0.75" oninput="updateScene()">
             </div>
             <div class="input-item" style="margin-top: 5px;">
+                <span class="hint">部屋の明るさ (照明)</span>
+                <input type="range" id="ambientLight" min="0.0" max="2.5" step="0.05" value="2.5" oninput="updateScene()">
+            </div>
+            <div class="input-item" style="margin-top: 5px;">
                 <span class="hint">テレビのYouTube URL</span>
                 <div class="input-row" style="gap: 6px; align-items: center;">
                     <input type="text" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." oninput="handleYoutubeUrlInput()">
@@ -182,7 +289,7 @@
     import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 
     let scene, camera, renderer, clock;
-    let cssRenderer, youtubeObject;
+    let cssRenderer, youtubeObject, ambientLight, gridHelper, tvLight;
     let personA, personB, furnitureGroup, stageGroup;
     let currentView = '3rd';
     let rotation = { x: 0, y: 0 }, camDist = 2.5, isDragging = false, previousTouch = null;
@@ -194,13 +301,27 @@
     const CHAIR_HEIGHT = 0.42;
     const TV_Z = 1.8, TV_BOARD_H = 0.3, TV_W = 1.2, TV_H = 0.7, TV_D = 0.05;
 
+    function checkOrientationOverlay() {
+        const panel = document.getElementById('ui-panel');
+        const overlay = document.getElementById('orientation-overlay');
+        const isCollapsed = panel.classList.contains('collapsed');
+        const isPortrait = window.innerHeight > window.innerWidth;
+
+        if (isCollapsed && isPortrait) {
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+
     function init() {
         const container = document.getElementById('canvas-container');
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const rect = container.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
 
         scene = new THREE.Scene();
-        scene.background = null;
+        scene.background = new THREE.Color(0xffffff);
         camera = new THREE.PerspectiveCamera(50, width / height, 0.01, 1000);
         camera.rotation.order = 'YXZ';
         
@@ -224,8 +345,21 @@
         container.appendChild(cssRenderer.domElement);
         container.appendChild(renderer.domElement);
 
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 2.5));
-        scene.add(new THREE.GridHelper(200, 400, 0xeeeeee, 0xf5f5f5));
+        ambientLight = new THREE.HemisphereLight(0xffffff, 0x888888, 2.5);
+        scene.add(ambientLight);
+
+        // テレビ画面からの反射光（スポットライト）の初期化
+        tvLight = new THREE.SpotLight(0xaaccff, 0); // テレビ画面っぽい淡い青白さ
+        tvLight.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - 0.1);
+        tvLight.target.position.set(0, CHAIR_HEIGHT + 0.3, 0); // ソファ・マネキン方向へ照射
+        tvLight.angle = Math.PI / 2.5;
+        tvLight.penumbra = 0.8;
+        tvLight.distance = 6;
+        scene.add(tvLight);
+        scene.add(tvLight.target);
+
+        gridHelper = new THREE.GridHelper(200, 400, 0xeeeeee, 0xf5f5f5);
+        scene.add(gridHelper);
 
         stageGroup = new THREE.Group();
         scene.add(stageGroup);
@@ -237,13 +371,8 @@
         setupControls();
         setupVideoTexture();
 
-        // リサイズ・画面回転イベントの制御
         window.addEventListener('resize', onWindowResize);
-        window.addEventListener('orientationchange', () => {
-            onWindowResize();
-            setTimeout(onWindowResize, 100);
-            setTimeout(onWindowResize, 300);
-        });
+        window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 300));
         
         window.updateScene = updateScene;
         window.switchView = switchView;
@@ -255,6 +384,7 @@
             const text = document.getElementById('toggle-text');
             panel.classList.toggle('collapsed');
             text.innerText = panel.classList.contains('collapsed') ? '開く' : '閉じる';
+            checkOrientationOverlay();
         };
 
         document.getElementById('canvas-container').addEventListener('click', () => {
@@ -267,8 +397,8 @@
             }
         });
 
-        onWindowResize();
         updateScene();
+        checkOrientationOverlay();
         animate();
     }
 
@@ -304,24 +434,21 @@
     }
 
     function onWindowResize() {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const container = document.getElementById('canvas-container');
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
 
         camera.aspect = width / height;
-
-        // 縦持ち（アスペクト比 < 1）の時、カメラのFOVを自動補正して映像のズレを防ぐ
-        if (camera.aspect < 1 && currentView === '3rd') {
-            camera.fov = 50 / camera.aspect;
-        } else if (currentView === '3rd') {
-            camera.fov = 50;
-        }
-
         camera.updateProjectionMatrix();
         
         renderer.setSize(width, height);
         if (cssRenderer) {
             cssRenderer.setSize(width, height);
         }
+
+        checkOrientationOverlay();
     }
 
     function swapAB() {
@@ -415,9 +542,10 @@
             wrapper.style.background = '#000';
             wrapper.style.overflow = 'hidden';
             wrapper.style.boxSizing = 'border-box';
+            wrapper.style.pointerEvents = 'auto';
 
             const iframe = document.createElement('iframe');
-            iframe.src = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=1&loop=1&playlist=${currentVideoId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
+            iframe.src = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=0&loop=1&playlist=${currentVideoId}&controls=1&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = '0';
@@ -437,6 +565,8 @@
             tvGroup.add(obj);
             youtubeObject = obj;
         }
+
+        const standW_leg = 0.3, standH_leg = 0.05, standD_leg = 0.25;
 
         furnitureGroup.add(tvGroup);
     }
@@ -520,6 +650,36 @@
         const hA = parseFloat(document.getElementById('heightA').value)||158, hB = parseFloat(document.getElementById('heightB').value)||171.5;
         let dist = parseFloat(document.getElementById('sittingDistance').value) || 0.75;
 
+        const lightVal = parseFloat(document.getElementById('ambientLight').value);
+        const safeLightVal = isNaN(lightVal) ? 2.5 : lightVal;
+
+        if (ambientLight) {
+            ambientLight.intensity = safeLightVal;
+        }
+
+        // 動画再生時にマネキンへ反射するテレビの反射光強度（明るさが暗いほど反射が強調される）
+        if (tvLight) {
+            if (videoActive) {
+                // 部屋が暗いほど反射光の輝度が自然に引き立つ計算
+                tvLight.intensity = Math.max(1.5, 4.0 - safeLightVal); 
+            } else {
+                tvLight.intensity = 0;
+            }
+        }
+
+        // 空間全体の暗さを一括制御（背景色＋床のグリッドの線）
+        const bgRatio = Math.max(0, Math.min(1, safeLightVal / 2.5));
+        if (scene) {
+            scene.background = new THREE.Color(bgRatio, bgRatio, bgRatio);
+        }
+        if (gridHelper && gridHelper.material) {
+            // 背景色に合わせて床の線の色も暗く調整する
+            const grid1Color = new THREE.Color(0xeeeeee).multiplyScalar(bgRatio);
+            const grid2Color = new THREE.Color(0xf5f5f5).multiplyScalar(bgRatio);
+            gridHelper.material.color.copy(grid1Color);
+            gridHelper.material.needsUpdate = true;
+        }
+
         if(personA) stageGroup.remove(personA);
         if(personB) stageGroup.remove(personB);
         
@@ -560,7 +720,12 @@
         }
 
         const nA = document.getElementById('nameA').value||'A', nB = document.getElementById('nameB').value||'B';
-        document.getElementById('view-label').innerText = currentView === 'A' ? nA+'の視点' : (currentView === 'B' ? nB+'の視点' : '三人称視点');
+        if (currentView === '3rd') {
+            document.getElementById('view-label').innerText = '三人称視点';
+        } else {
+            const myName = (currentView === 'A') ? nA : nB;
+            document.getElementById('view-label').innerText = `${myName} の視点`;
+        }
         
         document.getElementById('info').innerHTML = `
             <div class="info-row"><span class="info-label">📏 全長身長差</span><span class="info-value">${Math.abs(hA-hB).toFixed(1)}<span class="unit">cm</span></span></div>
@@ -570,6 +735,15 @@
 
     function animate() {
         requestAnimationFrame(animate);
+
+        // 動画再生時にテレビの光がゆらゆらと明滅して映像が反射している演出
+        if (videoActive && tvLight) {
+            const time = Date.now() * 0.003;
+            const lightVal = parseFloat(document.getElementById('ambientLight').value);
+            const safeLightVal = isNaN(lightVal) ? 2.5 : lightVal;
+            const baseIntensity = Math.max(1.5, 4.0 - safeLightVal);
+            tvLight.intensity = baseIntensity + Math.sin(time * 2.5) * 0.4 + Math.cos(time * 4.1) * 0.2;
+        }
         
         const posTV = new THREE.Vector3(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z);
         const posA = new THREE.Vector3().copy(personA.position).add(new THREE.Vector3(0, personA.userData.eyeY, 0));
@@ -689,7 +863,8 @@
         currentView = order[(order.indexOf(currentView) + 1) % order.length];
         rotation.x = 0; rotation.y = 0; 
         if (camera) {
-            onWindowResize();
+            camera.fov = 50;
+            camera.updateProjectionMatrix();
         }
         updateScene();
     }
