@@ -196,8 +196,8 @@
 
     function init() {
         const container = document.getElementById('canvas-container');
-        const width = container.clientWidth || window.innerWidth;
-        const height = container.clientHeight || window.innerHeight;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
 
         scene = new THREE.Scene();
         scene.background = null;
@@ -237,8 +237,13 @@
         setupControls();
         setupVideoTexture();
 
+        // リサイズ・画面回転イベントの制御
         window.addEventListener('resize', onWindowResize);
-        window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 300));
+        window.addEventListener('orientationchange', () => {
+            onWindowResize();
+            setTimeout(onWindowResize, 100);
+            setTimeout(onWindowResize, 300);
+        });
         
         window.updateScene = updateScene;
         window.switchView = switchView;
@@ -262,8 +267,8 @@
             }
         });
 
-        updateScene();
         onWindowResize();
+        updateScene();
         animate();
     }
 
@@ -299,12 +304,18 @@
     }
 
     function onWindowResize() {
-        const container = document.getElementById('canvas-container');
-        if (!container) return;
-        const width = container.clientWidth || window.innerWidth;
-        const height = container.clientHeight || window.innerHeight;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
 
         camera.aspect = width / height;
+
+        // 縦持ち（アスペクト比 < 1）の時、カメラのFOVを自動補正して映像のズレを防ぐ
+        if (camera.aspect < 1 && currentView === '3rd') {
+            camera.fov = 50 / camera.aspect;
+        } else if (currentView === '3rd') {
+            camera.fov = 50;
+        }
+
         camera.updateProjectionMatrix();
         
         renderer.setSize(width, height);
@@ -426,8 +437,6 @@
             tvGroup.add(obj);
             youtubeObject = obj;
         }
-
-        const standW_leg = 0.3, standH_leg = 0.05, standD_leg = 0.25;
 
         furnitureGroup.add(tvGroup);
     }
@@ -680,8 +689,7 @@
         currentView = order[(order.indexOf(currentView) + 1) % order.length];
         rotation.x = 0; rotation.y = 0; 
         if (camera) {
-            camera.fov = 50;
-            camera.updateProjectionMatrix();
+            onWindowResize();
         }
         updateScene();
     }
