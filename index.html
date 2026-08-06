@@ -290,14 +290,14 @@
 
     let scene, camera, renderer, clock;
     let cssRenderer, youtubeObject, ambientLight, gridHelper, tvLight;
-    let personA, personB, furnitureGroup, stageGroup;
+    let personA, personB, furnitureGroup, stageGroup, tvGroup;
     let currentView = '3rd';
     let rotation = { x: 0, y: 0 }, camDist = 2.5, isDragging = false, previousTouch = null;
     let initialPinchDist = null;
 
     let videoTexture, tvScreenMesh, videoActive = false;
     let currentVideoId = '';
-    let loadedVideoId = ''; // 実際に現在埋め込まれている動画IDを保持
+    let loadedVideoId = '';
 
     const CHAIR_HEIGHT = 0.42;
     const TV_Z = 1.8, TV_BOARD_H = 0.3, TV_W = 1.2, TV_H = 0.7, TV_D = 0.05;
@@ -372,6 +372,9 @@
         setupControls();
         setupVideoTexture();
 
+        // 家具（ソファとテレビ）は最初に一度だけ生成
+        buildFurnitureOnce();
+
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 300));
         
@@ -431,7 +434,55 @@
 
     function loadYoutubeVideo(videoId) {
         videoActive = true;
+        updateYoutubeIframe();
         updateScene();
+    }
+
+    function updateYoutubeIframe() {
+        if (!videoActive || !currentVideoId || currentVideoId === loadedVideoId) return;
+
+        if (youtubeObject) {
+            if (youtubeObject.element && youtubeObject.element.parentNode) {
+                youtubeObject.element.parentNode.removeChild(youtubeObject.element);
+            }
+            youtubeObject.removeFromParent();
+            youtubeObject = null;
+        }
+
+        const wrapper = document.createElement('div');
+        const pixelW = 640, pixelH = 360;
+        wrapper.style.width = pixelW + 'px';
+        wrapper.style.height = pixelH + 'px';
+        wrapper.style.background = '#000';
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.boxSizing = 'border-box';
+        wrapper.style.pointerEvents = 'auto';
+
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=0&loop=1&playlist=${currentVideoId}&controls=1&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = '0';
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.setAttribute('allow', 'autoplay; encrypted-media');
+        wrapper.appendChild(iframe);
+
+        const obj = new CSS3DObject(wrapper);
+        const screenW = TV_W - 0.04, screenH = TV_H - 0.04;
+        
+        obj.scale.set(screenW / pixelW, screenH / pixelH, 1);
+        obj.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - TV_D / 2 - 0.001);
+        obj.rotation.y = Math.PI;
+        
+        tvGroup.add(obj);
+        youtubeObject = obj;
+        loadedVideoId = currentVideoId;
+
+        if (tvScreenMesh) {
+            tvScreenMesh.material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, blending: THREE.NoBlending });
+        }
     }
 
     function onWindowResize() {
@@ -464,32 +515,12 @@
         updateScene();
     }
 
-    function buildFurniture(mode) {
-        // 動画IDが変更された場合のみiframeを壊して再読み込み（変更がなければ既存のyoutubeObjectをそのまま保持）
-        const needsNewIframe = (videoActive && currentVideoId && currentVideoId !== loadedVideoId);
-
-        if (needsNewIframe) {
-            if (youtubeObject) {
-                if (youtubeObject.element && youtubeObject.element.parentNode) {
-                    youtubeObject.element.parentNode.removeChild(youtubeObject.element);
-                }
-                youtubeObject.removeFromParent();
-            }
-            youtubeObject = null;
-        }
-
-        while(furnitureGroup.children.length > 0){
-            furnitureGroup.remove(furnitureGroup.children[0]);
-        }
-
+    function buildFurnitureOnce() {
         const sofaMat = new THREE.MeshPhongMaterial({ color: 0x9fabba }); 
         const cushionMat = new THREE.MeshPhongMaterial({ color: 0x8a99a8 }); 
         const tvBoardMat = new THREE.MeshPhongMaterial({ color: 0x3e2723 }); 
         const tvFrameMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a }); 
-        
-        const tvScreenMat = videoActive
-            ? new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, blending: THREE.NoBlending })
-            : new THREE.MeshPhongMaterial({ map: videoTexture, color: 0xffffff }); 
+        const tvScreenMat = new THREE.MeshPhongMaterial({ map: videoTexture, color: 0xffffff }); 
 
         const sofaGroup = new THREE.Group();
         const sofaWidth = 2.0;
@@ -519,7 +550,7 @@
 
         furnitureGroup.add(sofaGroup);
 
-        const tvGroup = new THREE.Group();
+        tvGroup = new THREE.Group();
         const tvZ = TV_Z; 
 
         const boardW = 1.6, boardH = TV_BOARD_H, boardD = 0.4;
@@ -540,43 +571,6 @@
         const tvStand = new THREE.Mesh(new THREE.BoxGeometry(standW, standH, standD), tvFrameMat);
         tvStand.position.set(0, boardH + standH / 2, tvZ);
         tvGroup.add(tvStand);
-
-        if (videoActive && currentVideoId) {
-            if (needsNewIframe || !youtubeObject) {
-                const wrapper = document.createElement('div');
-                const pixelW = 640, pixelH = 360;
-                wrapper.style.width = pixelW + 'px';
-                wrapper.style.height = pixelH + 'px';
-                wrapper.style.background = '#000';
-                wrapper.style.overflow = 'hidden';
-                wrapper.style.boxSizing = 'border-box';
-                wrapper.style.pointerEvents = 'auto';
-
-                const iframe = document.createElement('iframe');
-                iframe.src = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=0&loop=1&playlist=${currentVideoId}&controls=1&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
-                iframe.style.width = '100%';
-                iframe.style.height = '100%';
-                iframe.style.border = '0';
-                iframe.style.position = 'absolute';
-                iframe.style.top = '0';
-                iframe.style.left = '0';
-                iframe.setAttribute('allow', 'autoplay; encrypted-media');
-                wrapper.appendChild(iframe);
-
-                const obj = new CSS3DObject(wrapper);
-                const screenW = tvW - 0.04, screenH = tvH - 0.04;
-                
-                obj.scale.set(screenW / pixelW, screenH / pixelH, 1);
-                obj.position.set(0, boardH + tvH / 2 + 0.05, tvZ - tvD / 2 - 0.001);
-                obj.rotation.y = Math.PI;
-                
-                youtubeObject = obj;
-                loadedVideoId = currentVideoId;
-            }
-            tvGroup.add(youtubeObject);
-        }
-
-        const standW_leg = 0.3, standH_leg = 0.05, standD_leg = 0.25;
 
         furnitureGroup.add(tvGroup);
     }
@@ -692,8 +686,6 @@
 
         if(personA) stageGroup.remove(personA);
         if(personB) stageGroup.remove(personB);
-        
-        buildFurniture(mode);
 
         personA = createMannequin(document.getElementById('colorA').value, hA, document.getElementById('genderA').value, document.getElementById('nameA').value, 'A');
         personB = createMannequin(document.getElementById('colorB').value, hB, document.getElementById('genderB').value, document.getElementById('nameB').value, 'B');
