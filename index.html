@@ -195,8 +195,9 @@
     const TV_Z = 1.8, TV_BOARD_H = 0.3, TV_W = 1.2, TV_H = 0.7, TV_D = 0.05;
 
     function init() {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const container = document.getElementById('canvas-container');
+        const width = container.clientWidth || window.innerWidth;
+        const height = container.clientHeight || window.innerHeight;
 
         scene = new THREE.Scene();
         scene.background = null;
@@ -220,7 +221,6 @@
         cssRenderer.domElement.style.left = '0';
         cssRenderer.domElement.style.zIndex = '1';
 
-        const container = document.getElementById('canvas-container');
         container.appendChild(cssRenderer.domElement);
         container.appendChild(renderer.domElement);
 
@@ -262,8 +262,8 @@
             }
         });
 
-        onWindowResize();
         updateScene();
+        onWindowResize();
         animate();
     }
 
@@ -299,8 +299,10 @@
     }
 
     function onWindowResize() {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const container = document.getElementById('canvas-container');
+        if (!container) return;
+        const width = container.clientWidth || window.innerWidth;
+        const height = container.clientHeight || window.innerHeight;
 
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
