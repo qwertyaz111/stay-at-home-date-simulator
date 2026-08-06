@@ -297,6 +297,7 @@
 
     let videoTexture, tvScreenMesh, videoActive = false;
     let currentVideoId = '';
+    let loadedVideoId = ''; // 実際に現在埋め込まれている動画IDを保持
 
     const CHAIR_HEIGHT = 0.42;
     const TV_Z = 1.8, TV_BOARD_H = 0.3, TV_W = 1.2, TV_H = 0.7, TV_D = 0.05;
@@ -464,16 +465,22 @@
     }
 
     function buildFurniture(mode) {
-        if (youtubeObject) {
-            if (youtubeObject.element && youtubeObject.element.parentNode) {
-                youtubeObject.element.parentNode.removeChild(youtubeObject.element);
+        // 動画IDが変更された場合のみiframeを壊して再読み込み（変更がなければ既存のyoutubeObjectをそのまま保持）
+        const needsNewIframe = (videoActive && currentVideoId && currentVideoId !== loadedVideoId);
+
+        if (needsNewIframe) {
+            if (youtubeObject) {
+                if (youtubeObject.element && youtubeObject.element.parentNode) {
+                    youtubeObject.element.parentNode.removeChild(youtubeObject.element);
+                }
+                youtubeObject.removeFromParent();
             }
-            youtubeObject.removeFromParent();
+            youtubeObject = null;
         }
+
         while(furnitureGroup.children.length > 0){
             furnitureGroup.remove(furnitureGroup.children[0]);
         }
-        youtubeObject = null;
 
         const sofaMat = new THREE.MeshPhongMaterial({ color: 0x9fabba }); 
         const cushionMat = new THREE.MeshPhongMaterial({ color: 0x8a99a8 }); 
@@ -535,35 +542,38 @@
         tvGroup.add(tvStand);
 
         if (videoActive && currentVideoId) {
-            const wrapper = document.createElement('div');
-            const pixelW = 640, pixelH = 360;
-            wrapper.style.width = pixelW + 'px';
-            wrapper.style.height = pixelH + 'px';
-            wrapper.style.background = '#000';
-            wrapper.style.overflow = 'hidden';
-            wrapper.style.boxSizing = 'border-box';
-            wrapper.style.pointerEvents = 'auto';
+            if (needsNewIframe || !youtubeObject) {
+                const wrapper = document.createElement('div');
+                const pixelW = 640, pixelH = 360;
+                wrapper.style.width = pixelW + 'px';
+                wrapper.style.height = pixelH + 'px';
+                wrapper.style.background = '#000';
+                wrapper.style.overflow = 'hidden';
+                wrapper.style.boxSizing = 'border-box';
+                wrapper.style.pointerEvents = 'auto';
 
-            const iframe = document.createElement('iframe');
-            iframe.src = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=0&loop=1&playlist=${currentVideoId}&controls=1&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = '0';
-            iframe.style.position = 'absolute';
-            iframe.style.top = '0';
-            iframe.style.left = '0';
-            iframe.setAttribute('allow', 'autoplay; encrypted-media');
-            wrapper.appendChild(iframe);
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=0&loop=1&playlist=${currentVideoId}&controls=1&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = '0';
+                iframe.style.position = 'absolute';
+                iframe.style.top = '0';
+                iframe.style.left = '0';
+                iframe.setAttribute('allow', 'autoplay; encrypted-media');
+                wrapper.appendChild(iframe);
 
-            const obj = new CSS3DObject(wrapper);
-            const screenW = tvW - 0.04, screenH = tvH - 0.04;
-            
-            obj.scale.set(screenW / pixelW, screenH / pixelH, 1);
-            obj.position.set(0, boardH + tvH / 2 + 0.05, tvZ - tvD / 2 - 0.001);
-            obj.rotation.y = Math.PI;
-            
-            tvGroup.add(obj);
-            youtubeObject = obj;
+                const obj = new CSS3DObject(wrapper);
+                const screenW = tvW - 0.04, screenH = tvH - 0.04;
+                
+                obj.scale.set(screenW / pixelW, screenH / pixelH, 1);
+                obj.position.set(0, boardH + tvH / 2 + 0.05, tvZ - tvD / 2 - 0.001);
+                obj.rotation.y = Math.PI;
+                
+                youtubeObject = obj;
+                loadedVideoId = currentVideoId;
+            }
+            tvGroup.add(youtubeObject);
         }
 
         const standW_leg = 0.3, standH_leg = 0.05, standD_leg = 0.25;
