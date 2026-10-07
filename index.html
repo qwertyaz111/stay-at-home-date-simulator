@@ -6,16 +6,15 @@
     <title>🏠お家デートシミュレーター</title>
     <style>
         :root { --panel-width: 300px; }
-        /* スマホでの画面の伸縮やスクロールによるズレを完全に防ぐため、固定配置にします */
         body { margin: 0; font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: #ffffff; overflow: hidden; position: fixed; width: 100%; height: 100%; }
-        /* #ui-panel の更新 */
+        
         #ui-panel {
             position: absolute; 
             top: 10px; 
             left: 10px; 
             width: var(--panel-width);
             max-height: calc(100vh - 20px);
-            max-height: calc(100dvh - 20px); /* 可変ビューポート対応 */
+            max-height: calc(100dvh - 20px);
             background: rgba(255, 255, 255, 0.95); 
             padding: 15px; 
             padding-bottom: 40px; 
@@ -32,7 +31,6 @@
             transition: all 0.2s ease-out;
         }
 
-        /* 折りたたんだ（閉じた）時の専用スタイル */
         #ui-panel.collapsed {
             max-height: none !important;
             padding: 10px 15px !important;
@@ -41,13 +39,11 @@
             max-width: calc(100vw - 20px);
         }
 
-        /* 100vw/vhからfixedの100%に変更し、アドレスバーの影響を完全に排除します */
         #canvas-container { width: 100%; height: 100%; cursor: move; touch-action: none; position: fixed; top: 0; left: 0; overflow: hidden; }
 
         @media screen and (max-width: 480px) { 
             :root { --panel-width: calc(100vw - 20px); }
             #ui-panel { left: 10px; right: 10px; }
-            /* スマホ表示で閉じた場合、右端の固定を解除してタイトルサイズへ収める */
             #ui-panel.collapsed { right: auto; }
         }
         
@@ -58,7 +54,6 @@
             .input-group { padding: 8px; margin-bottom: 5px; }
         }
 
-        /* ヘッダーをパネル上部に固定（スクロールしても上に張り付く） */
         .panel-header { 
             display: flex; 
             justify-content: space-between; 
@@ -66,8 +61,8 @@
             cursor: pointer; 
             user-select: none; 
             gap: 10px; 
-            position: sticky; /* パネル内スクロール時も上に固定 */
-            top: -15px;       /* padding 分を相殺 */
+            position: sticky; 
+            top: -15px; 
             background: rgba(255, 255, 255, 0.95);
             padding: 10px 0;
             margin: -15px -15px 10px -15px;
@@ -83,7 +78,7 @@
             background: #eee; 
             padding: 4px 10px; 
             border-radius: 10px; 
-            white-space: nowrap; /* テキストの意図しない改行を防止 */
+            white-space: nowrap; 
         }
         .collapsed #ui-content { display: none; }
 
@@ -92,7 +87,7 @@
             margin: 0; 
             color: #333; 
             font-weight: bold; 
-            white-space: nowrap; /* タイトルの改行を防止 */
+            white-space: nowrap; 
         }
         .app-description { font-size: 11px; color: #777; margin-top: 8px; margin-bottom: 5px; line-height: 1.5; text-align: center; }
         
@@ -163,7 +158,6 @@
         }
         .crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; border: 2px solid rgba(0,0,0,0.15); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
 
-        /* 縦持ち警告オーバーレイのスタイル */
         #orientation-overlay {
             display: none;
             position: fixed;
@@ -360,10 +354,9 @@
         ambientLight = new THREE.HemisphereLight(0xffffff, 0x888888, 2.5);
         scene.add(ambientLight);
 
-        // テレビ画面からの反射光（スポットライト）の初期化
-        tvLight = new THREE.SpotLight(0xaaccff, 0); // テレビ画面っぽい淡い青白さ
+        tvLight = new THREE.SpotLight(0xaaccff, 0);
         tvLight.position.set(0, TV_BOARD_H + TV_H / 2 + 0.05, TV_Z - 0.1);
-        tvLight.target.position.set(0, CHAIR_HEIGHT + 0.3, 0); // ソファ・マネキン方向へ照射
+        tvLight.target.position.set(0, CHAIR_HEIGHT + 0.3, 0);
         tvLight.angle = Math.PI / 2.5;
         tvLight.penumbra = 0.8;
         tvLight.distance = 6;
@@ -383,7 +376,6 @@
         setupControls();
         setupVideoTexture();
 
-        // 家具（ソファとテレビ）は最初に一度だけ生成
         buildFurnitureOnce();
 
         window.addEventListener('resize', onWindowResize);
@@ -402,26 +394,14 @@
             checkOrientationOverlay();
         };
 
-        // 入力フォームからフォーカスが外れた際に、パネルのスクロール位置を上部へリセットする
         document.querySelectorAll('#ui-panel input, #ui-panel select').forEach(element => {
             element.addEventListener('blur', () => {
                 const panel = document.getElementById('ui-panel');
                 if (panel) {
                     panel.scrollTop = 0;
                 }
-                // iOS Safari等の画面全体のズレ防止策
                 window.scrollTo(0, 0);
             });
-        });
-
-        document.getElementById('canvas-container').addEventListener('click', () => {
-            if (youtubeObject) {
-                const iframe = youtubeObject.element.querySelector('iframe');
-                if (iframe && iframe.contentWindow) {
-                    iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
-                    iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
-                }
-            }
         });
 
         updateScene();
@@ -482,7 +462,8 @@
         wrapper.style.pointerEvents = 'auto';
 
         const iframe = document.createElement('iframe');
-        iframe.src = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=0&loop=1&playlist=${currentVideoId}&controls=1&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
+        // 自動再生ポリシーに適合させるため mute=1 に設定
+        iframe.src = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=1&loop=1&playlist=${currentVideoId}&controls=1&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = '0';
@@ -684,23 +665,19 @@
             ambientLight.intensity = safeLightVal;
         }
 
-        // 動画再生時にマネキンへ反射するテレビの反射光強度（明るさが暗いほど反射が強調される）
         if (tvLight) {
             if (videoActive) {
-                // 部屋が暗いほど反射光の輝度が自然に引き立つ計算
                 tvLight.intensity = Math.max(1.5, 4.0 - safeLightVal); 
             } else {
                 tvLight.intensity = 0;
             }
         }
 
-        // 空間全体の暗さを一括制御（背景色＋床のグリッドの線）
         const bgRatio = Math.max(0, Math.min(1, safeLightVal / 2.5));
         if (scene) {
             scene.background = new THREE.Color(bgRatio, bgRatio, bgRatio);
         }
         if (gridHelper && gridHelper.material) {
-            // 背景色に合わせて床の線の色も暗く調整する
             const grid1Color = new THREE.Color(0xeeeeee).multiplyScalar(bgRatio);
             const grid2Color = new THREE.Color(0xf5f5f5).multiplyScalar(bgRatio);
             gridHelper.material.color.copy(grid1Color);
@@ -761,7 +738,6 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // 動画再生時にテレビの光がゆらゆらと明滅して映像が反射している演出
         if (videoActive && tvLight) {
             const time = Date.now() * 0.003;
             const lightVal = parseFloat(document.getElementById('ambientLight').value);
@@ -897,7 +873,7 @@
     function shareToX() {
         const nA = document.getElementById('nameA').value || 'A', nB = document.getElementById('nameB').value || 'B';
         const hA = parseFloat(document.getElementById('heightA').value) || 158.0, hB = parseFloat(document.getElementById('heightB').value) || 171.5;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${nA}(${hA.toFixed(1)}cm)と${nB}(${hB.toFixed(1)}cm)のお家デート体格差！\n#お家デートシミュレーター`)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${nA}(${hA.toFixed(1)}cm)と${nB}(${hB.toFixed(1)}cm)がお家デート！\n#お家デートシミュレーター`)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
     }
 
     init();
